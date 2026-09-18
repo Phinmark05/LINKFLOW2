@@ -1,15 +1,9 @@
 <?php
-/**
- * Student Dashboard
- *
- * Shows the student's personal info, their current application status,
- * reference number, and placement information if assigned.
- */
+/** @var array $currentStudent */
 require_once __DIR__ . '/../includes/student_check.php';
 
 $pageTitle = 'Student Dashboard';
 
-// Get the student's most recent application (if any)
 $apps = get_student_applications($pdo, (int) $currentStudent['id']);
 $latestApp = !empty($apps) ? $apps[0] : null;
 
@@ -29,7 +23,6 @@ include __DIR__ . '/../includes/sidebar.php';
     <div class="content">
         <div class="container-fluid">
 
-            <!-- Student info card -->
             <div class="row">
                 <div class="col-md-4">
                     <div class="card card-primary">
@@ -44,7 +37,6 @@ include __DIR__ . '/../includes/sidebar.php';
                     </div>
                 </div>
 
-                <!-- Latest application card -->
                 <div class="col-md-4">
                     <div class="card card-info">
                         <div class="card-header"><h3 class="card-title">Current Application</h3></div>
@@ -68,7 +60,6 @@ include __DIR__ . '/../includes/sidebar.php';
                     </div>
                 </div>
 
-                <!-- Placement card -->
                 <div class="col-md-4">
                     <div class="card card-success">
                         <div class="card-header"><h3 class="card-title">Placement</h3></div>
@@ -91,7 +82,6 @@ include __DIR__ . '/../includes/sidebar.php';
                 </div>
             </div>
 
-            <!-- Quick actions -->
             <div class="row mt-3">
                 <div class="col-md-12">
                     <div class="card">

@@ -7,13 +7,25 @@ if (!current_user_is_admin()) {
 
 $pageTitle = 'Staff Management';
 
-$users   = get_all_users($pdo);
-$roles   = get_all_roles($pdo);
+// Fetch base data
+$allUsers = get_all_users($pdo, true);
+$roles    = get_all_roles($pdo);
+
+// --- PAGINATION LOGIC ---
+$limit       = 4; // Number of items per page
+$totalUsers  = count($allUsers);
+$totalPages  = max(1, ceil($totalUsers / $limit));$currentPage = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+if ($currentPage >$totalPages) {
+    $currentPage =$totalPages;
+}
+$offset = ($currentPage - 1) *$limit;
+
+// Slice array for display (If `get_all_users` supports LIMIT/OFFSET in SQL, pass $limit and$offset directly to SQL instead)
+$users = array_slice($allUsers, $offset,$limit);
 
 // Build a map of role_id => role_name for quick lookup
 $roleMap = [];
-foreach ($roles as $r) {
-    $roleMap[$r['id']] = $r['name'];
+foreach ($roles as $r) {$roleMap[$r['id']] =$r['name'];
 }
 
 // Staff roles that can be assigned (excluding admin — admin is assigned separately)
@@ -53,11 +65,11 @@ include __DIR__ . '/../includes/sidebar.php';
                                 </div>
                                 <div class="form-group">
                                     <label>Password</label>
-                                    <input type="password" name="password" class="form-control" required minlength="6">
+                                    <input type="password" name="password" class="form-control" required minlength="8">
                                 </div>
                                 <div class="form-group">
                                     <label>Phone</label>
-                                    <input type="text" name="phone_number" class="form-control">
+                                    <input type="text" name="phone_number" class="form-control" minlength="9">
                                 </div>
                                 <div class="form-group">
                                     <label>Designation</label>
@@ -67,8 +79,8 @@ include __DIR__ . '/../includes/sidebar.php';
                                     <label>Role</label>
                                     <select name="role_id" class="form-control" required>
                                         <option value="">— Select Role —</option>
-                                        <?php foreach ($roles as $r): ?>
-                                            <?php if (in_array($r['name'], $assignableRoles, true)): ?>
+                                        <?php foreach ($roles as$r): ?>
+                                            <?php if (in_array($r['name'],$assignableRoles, true)): ?>
                                                 <option value="<?= (int) $r['id'] ?>"><?= e(ucwords(str_replace('_', ' ', $r['name']))) ?></option>
                                             <?php endif; ?>
                                         <?php endforeach; ?>
@@ -100,23 +112,23 @@ include __DIR__ . '/../includes/sidebar.php';
                                         <th>Role(s)</th>
                                         <th>Status</th>
                                         <th>Action</th>
+                                        <th>Delete</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php if (empty($users)): ?>
                                         <tr><td colspan="6" class="text-center text-muted">No staff members found.</td></tr>
                                     <?php else: ?>
-                                        <?php foreach ($users as $u): ?>
+                                        <?php foreach ($users as$u): ?>
                                         <tr>
                                             <td><?= e($u['full_name']) ?></td>
                                             <td><?= e($u['username']) ?></td>
                                             <td><?= e($u['email']) ?></td>
                                             <td>
                                                 <?php
-                                                $userRoleIds = get_user_role_ids($pdo, (int) $u['id']);
-                                                foreach ($userRoleIds as $rid):
-                                                    if (isset($roleMap[$rid])):
-                                                        $rname = $roleMap[$rid];
+                                                $userRoleIds = get_user_role_ids($pdo, (int)$u['id']);
+                                                foreach ($userRoleIds as$rid):
+                                                    if (isset($roleMap[$rid])):$rname = $roleMap[$rid];
                                                         $badgeClass = match ($rname) {
                                                             'admin' => 'bg-danger',
                                                             'secretary' => 'bg-info',
@@ -144,12 +156,46 @@ include __DIR__ . '/../includes/sidebar.php';
                                                 <a href="/FMS/admin/edit_supervisor.php?id=<?= (int) $u['id'] ?>" class="btn btn-sm btn-warning">
                                                     <i class="fas fa-edit"></i> Edit
                                                 </a>
+                                            </td>
+                                            <td>
+                                                <form action="/FMS/actions/toggle_deleted.php" method="post" class="d-inline">
+                                                    <?= csrf_field() ?>
+                                                    <input type="hidden" name="entity" value="supervisor">
+                                                    <input type="hidden" name="id" value="<?= (int) $u['id'] ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger"><?= $u['deleted'] ? 'Restore' : 'Delete' ?></button>
+                                                </form>
+                                            </td>
                                         </tr>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
+                        
+                        <!-- PAGINATION FOOTER -->
+                        <?php if ($totalPages > 1): ?>
+                        <div class="card-footer clearfix">
+                            <ul class="pagination pagination-sm m-0 float-right">
+                                <!-- Previous Link -->
+                                <li class="page-item <?= ($currentPage <= 1) ? 'disabled' : '' ?>">
+                                    <a class="page-link" href="?page=<?= $currentPage - 1 ?>">&laquo;</a>
+                                </li>
+                                
+                                <!-- Page Numbers -->
+                                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                                    <li class="page-item <?= ($i ===$currentPage) ? 'active' : '' ?>">
+                                        <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                                    </li>
+                                <?php endfor; ?>
+                                
+                                <!-- Next Link -->
+                                <li class="page-item <?= ($currentPage >=$totalPages) ? 'disabled' : '' ?>">
+                                    <a class="page-link" href="?page=<?= $currentPage + 1 ?>">&raquo;</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <?php endif; ?>
+
                     </div>
                 </div>
             </div>

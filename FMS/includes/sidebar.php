@@ -65,6 +65,11 @@
                     $pendingCount = (int) $pdo->query("SELECT COUNT(*) FROM applications WHERE status IN ('submitted','under_review','accepted') AND current_review_stage != 'done'")->fetchColumn();
                     ?>
                     <li class="nav-item">
+                        <a href="/FMS/admin/profile.php" class="nav-link <?= ($_SERVER['SCRIPT_NAME'] ?? '') === '/FMS/admin/profile.php' ? 'active' : '' ?>">
+                            <i class="nav-icon fas fa-user"></i><p>My Profile</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="/FMS/admin/applications.php" class="nav-link <?= ($_SERVER['SCRIPT_NAME'] ?? '') === '/FMS/admin/applications.php' ? 'active' : '' ?>">
                             <i class="nav-icon fas fa-file-alt"></i><p>Applications<?php if ($pendingCount > 0): ?> <span class="badge badge-warning right"><?= $pendingCount ?></span><?php endif; ?></p>
                         </a>
@@ -78,6 +83,16 @@
                     <li class="nav-item">
                         <a href="/FMS/admin/departments.php" class="nav-link <?= ($_SERVER['SCRIPT_NAME'] ?? '') === '/FMS/admin/departments.php' ? 'active' : '' ?>">
                             <i class="nav-icon fas fa-sitemap"></i><p>Departments</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/FMS/admin/institutions.php" class="nav-link <?= ($_SERVER['SCRIPT_NAME'] ?? '') === '/FMS/admin/institutions.php' ? 'active' : '' ?>">
+                            <i class="nav-icon fas fa-university"></i><p>Institutions</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/FMS/admin/specializations.php" class="nav-link <?= ($_SERVER['SCRIPT_NAME'] ?? '') === '/FMS/admin/specializations.php' ? 'active' : '' ?>">
+                            <i class="nav-icon fas fa-graduation-cap"></i><p>Specializations</p>
                         </a>
                     </li>
                     <li class="nav-item">

@@ -8,7 +8,7 @@ if (empty($_SESSION['user_id'])) {
 }
 if (!verify_csrf()) {
     set_flash('error', 'Invalid form submission.');
-    redirect('/FMS/staff/profile.php');
+    redirect('/FMS/admin/profile.php');
 }
 
 $userId = (int) $_SESSION['user_id'];
@@ -18,12 +18,8 @@ if (!$user) {
     redirect('/FMS/auth/login.php');
 }
 
-// Admins should use the admin system, not this form
-if (user_has_role($pdo, $userId, 'admin')) {
-    redirect('/FMS/admin/dashboard.php');
-}
-
-// --- Collect submitted values ---
+$username = trim($_POST['username'] ?? '');
+$designation = trim($_POST['designation'] ?? '');
 $fullName       = trim($_POST['full_name'] ?? '');
 $email          = trim($_POST['email'] ?? '');
 $phoneNumber   = trim($_POST['phone_number'] ?? '');
@@ -34,23 +30,23 @@ $newPasswordConf = $_POST['new_password_confirm'] ?? '';
 if (($_POST['action'] ?? '') === 'password') {
     if ($newPassword === '') {
         set_flash('error', 'Please enter a new password.');
-        redirect('/FMS/staff/profile.php');
+        redirect('/FMS/admin/profile.php');
     }
 
     if (strlen($newPassword) < 8) {
         set_flash('error', 'New password must be at least 8 characters.');
-        redirect('/FMS/staff/profile.php');
+        redirect('/FMS/admin/profile.php');
     }
 
     if ($newPassword !== $newPasswordConf) {
         set_flash('error', 'New passwords do not match.');
-        redirect('/FMS/staff/profile.php');
+        redirect('/FMS/admin/profile.php');
     }
 
     $stmt = $pdo->prepare('UPDATE users SET password = ? WHERE id = ?');
     $stmt->execute([password_hash($newPassword, PASSWORD_DEFAULT), $userId]);
     set_flash('success', 'Password changed successfully.');
-    redirect('/FMS/staff/profile.php');
+    redirect('/FMS/admin/profile.php');
 }
 
 // --- Validate ---
@@ -64,6 +60,10 @@ $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
 $stmt->execute([$email, $userId]);
 if ($stmt->fetch()) $errors[] = 'That email is already in use.';
 
+if ($phoneNumber !== '') {
+    if (strlen($phoneNumber) < 9) $errors[] = 'Phone number must be at least 9 characters.';
+}
+
 // Validate password change if provided
 if ($newPassword !== '') {
     if (strlen($newPassword) < 8) $errors[] = 'New password must be at least 8  characters.';
@@ -72,8 +72,9 @@ if ($newPassword !== '') {
 
 if ($errors) {
     set_flash('error', implode(' ', $errors));
-    redirect('/FMS/staff/profile.php');
+    redirect('/FMS/admin/profile.php');
 }
+
 
 // --- Build the update query ---
 if ($newPassword !== '') {
@@ -92,15 +93,15 @@ if ($newPassword !== '') {
 } else {
     $stmt = $pdo->prepare("
         UPDATE users SET
-            full_name = ?, email = ?, phone_number = ?
+           username = ?, designation = ?, full_name = ?, email = ?, phone_number = ?
         WHERE id = ?
     ");
     $stmt->execute([
-        $fullName, $email,
+        $username, $designation, $fullName, $email,
         $phoneNumber !== '' ? $phoneNumber : null,
         $userId,
     ]);
 }
 
 set_flash('success', 'Profile updated successfully.');
-redirect('/FMS/staff/profile.php');
+redirect('/FMS/admin/profile.php');

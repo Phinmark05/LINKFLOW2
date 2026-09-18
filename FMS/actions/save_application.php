@@ -2,17 +2,16 @@
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/document_helpers.php';
 
-// Only accept POST
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect('/FMS/auth/login.php');
 }
 
-// Must be a logged-in student
+
 if (empty($_SESSION['student_id'])) {
     redirect('/FMS/auth/login.php');
 }
 
-// Verify CSRF token
 if (!verify_csrf()) {
     set_flash('error', 'Invalid form submission.');
     redirect('/FMS/student/application.php');
@@ -23,14 +22,13 @@ $action       = $_POST['action'] ?? 'draft';
 $editAppId    = (int) ($_POST['application_id'] ?? 0);
 $isEdit        = $editAppId > 0;
 
-// Verify the student exists
+
 $student = get_student($pdo, $studentId);
 if (!$student) {
     session_destroy();
     redirect('/FMS/auth/login.php');
 }
 
-// --- If editing, load and verify the existing application ---
 $existingApp = null;
 if ($isEdit) {
     $existingApp = get_application($pdo, $editAppId);
@@ -70,11 +68,10 @@ $windowValue = $windowId > 0 ? $windowId : null;
 $trainingTypeValue = $trainingTypeId > 0 ? $trainingTypeId : null;
 $studyLevelValue = $studyLevelId > 0 ? $studyLevelId : null;
 
-// --- Validate enum values ---
+
 if (!in_array($appType, ['initial', 'reapplication'], true)) $appType = 'initial';
 if (!in_array($skillLevel, ['beginner', 'intermediate', 'advanced'], true)) $skillLevel = 'beginner';
 
-// --- Validate required fields ---
 $errors = [];
 
 if ($action === 'submit') {
@@ -86,14 +83,12 @@ if ($action === 'submit') {
     if ($objectives === '') $errors[] = 'Expected learning objectives are required.';
 }
 
-// Validate dates if both provided
 if ($startDate !== '' && $endDate !== '' && strtotime($endDate) < strtotime($startDate)) {
     $errors[] = 'Requested end date cannot be before the start date.';
 }
 
-// --- Validate database references ---
 if ($windowId > 0) {
-    $stmt = $pdo->prepare("SELECT * FROM application_windows WHERE id = ? AND is_active = 1");
+    $stmt = $pdo->prepare("SELECT * FROM application_windows WHERE id = ? AND is_active = 1 AND deleted = 0");
     $stmt->execute([$windowId]);
     $window = $stmt->fetch();
     
@@ -101,7 +96,6 @@ if ($windowId > 0) {
         $errors[] = 'The selected application window is not available.';
     } else {
         if ($action === 'submit') {
-            // Set your local timezone explicitly
             $timezone = new DateTimeZone('Africa/Dar_es_Salaam'); 
             
             $now = new DateTime('now', $timezone);
@@ -139,7 +133,7 @@ if ($action === 'submit' && empty($specializations)) {
 
 if (!empty($specializations)) {
     foreach ($specializations as $spId) {
-        $stmt = $pdo->prepare("SELECT id FROM specializations WHERE id = ? AND is_active = 1");
+        $stmt = $pdo->prepare("SELECT id FROM specializations WHERE id = ? AND is_active = 1 AND deleted = 0");
         $stmt->execute([(int) $spId]);
         if (!$stmt->fetch()) {
             $errors[] = 'One or more selected specializations are invalid.';
@@ -147,9 +141,6 @@ if (!empty($specializations)) {
         }
     }
 }
-
-// Prevent duplicate applications: one active application per student per window
-// (excludes the current application when editing)
 if ($windowId > 0) {
     if ($isEdit) {
         $stmt = $pdo->prepare("
@@ -190,9 +181,7 @@ try {
     $pdo->beginTransaction();
 
     if ($isEdit) {
-        // --- Update existing application ---
-        // Capture old values for the audit log
-        $oldValues = [
+         $oldValues = [
             'status'                  => $existingApp['status'],
             'window_id'               => $existingApp['application_window_id'],
             'training_type_id'        => $existingApp['training_type_id'],
@@ -213,8 +202,7 @@ try {
             WHERE id = ?
         ");
         $stmt->execute([
-            $windowId, $trainingTypeId, $studyLevelId,
-            $appType, $skillLevel,
+            $windowId, $trainingTypeId, $studyLevelId, $appType, $skillLevel,
             $interest, $reason, $objectives,
             $startDate !== '' ? $startDate : null,
             $endDate !== '' ? $endDate : null,
@@ -225,7 +213,6 @@ try {
 
         $applicationId = $editAppId;
 
-        // Replace specializations: delete old ones, insert new ones
         $pdo->prepare("DELETE FROM application_specializations WHERE application_id = ?")->execute([$applicationId]);
         if (!empty($specializations)) {
             $spStmt = $pdo->prepare("INSERT INTO application_specializations (application_id, specialization_id) VALUES (?, ?)");

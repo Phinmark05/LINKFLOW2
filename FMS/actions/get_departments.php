@@ -13,5 +13,5 @@ if (empty($_SESSION['user_id'])) {
     exit;
 }
 
-$departments = array_values(array_filter(get_all_departments($pdo), static fn(array $department): bool => (bool) $department['is_active']));
+$departments = array_values(array_filter(get_all_departments($pdo), static fn(array $department): bool => (bool) $department['is_active'] && !(bool) $department['deleted']));
 echo json_encode($departments);

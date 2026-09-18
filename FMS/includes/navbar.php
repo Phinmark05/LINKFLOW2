@@ -100,7 +100,19 @@
                     <?php endif; ?>
                     <p>
                         <?= e($currentStudent['full_name'] ?? $currentUser['full_name'] ?? 'Guest') ?>
-                        <small><?= !empty($currentStudent) ? 'Student account' : 'Staff account' ?></small>
+                        <small>
+                            <?php 
+                            if (!empty($currentStudent)) {
+                                echo 'Student account';
+                            } elseif (current_user_is_admin()) {
+                                echo 'Admin account';
+                            } elseif (!empty($currentUser)) {
+                                echo 'Staff account';
+                            } else {
+                                echo 'Guest';
+                            }
+                            ?>
+                        </small>
                     </p>
                 </div>
                 <div class="user-footer">
@@ -108,7 +120,11 @@
                     <a href="/FMS/student/profile.php" class="user-action user-action-profile">
                         <i class="fas fa-user mr-1"></i> Profile
                     </a>
-                <?php elseif (!empty($currentUser) && !current_user_is_admin()): ?>
+                <?php elseif (current_user_is_admin()): ?>
+                    <a href="/FMS/admin/profile.php" class="user-action user-action-profile">
+                        <i class="fas fa-user mr-1"></i> Profile
+                    </a>
+                <?php elseif (!empty($currentUser)): ?>
                     <a href="/FMS/staff/profile.php" class="user-action user-action-profile">
                         <i class="fas fa-user mr-1"></i> Profile
                     </a>

@@ -16,7 +16,15 @@ if (!current_user_is_admin()) {
 
 $pageTitle = 'Application Windows';
 
-$windows = get_all_application_windows($pdo);
+$windows = get_all_application_windows($pdo, true);
+$editId = (int) ($_GET['edit'] ?? 0);
+$editingWindow = null;
+foreach ($windows as $window) {
+    if ((int) $window['id'] === $editId) {
+        $editingWindow = $window;
+        break;
+    }
+}
 
 include __DIR__ . '/../includes/header.php';
 include __DIR__ . '/../includes/navbar.php';
@@ -87,12 +95,21 @@ include __DIR__ . '/../includes/sidebar.php';
                                                 <?php endif; ?>
                                             </td>
                                             <td>
+                                                <a href="/FMS/admin/application_windows.php?edit=<?= (int) $w['id'] ?>" class="btn btn-sm btn-warning">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
                                                 <form action="/FMS/actions/toggle_window.php" method="post" class="d-inline">
                                                     <?= csrf_field() ?>
                                                     <input type="hidden" name="window_id" value="<?= (int) $w['id'] ?>">
                                                     <button type="submit" class="btn btn-sm btn-outline-<?= $w['is_active'] ? 'secondary' : 'success' ?>">
                                                         <?= $w['is_active'] ? 'Deactivate' : 'Activate' ?>
                                                     </button>
+                                                </form>
+                                                <form action="/FMS/actions/toggle_deleted.php" method="post" class="d-inline">
+                                                    <?= csrf_field() ?>
+                                                    <input type="hidden" name="entity" value="application_window">
+                                                    <input type="hidden" name="id" value="<?= (int) $w['id'] ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger"><?= $w['deleted'] ? 'Restore' : 'Delete' ?></button>
                                                 </form>
                                             </td>
                                         </tr>
@@ -104,6 +121,28 @@ include __DIR__ . '/../includes/sidebar.php';
                     </div>
                 </div>
             </div>
+            <?php if ($editingWindow): ?>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card card-warning">
+                        <div class="card-header"><h3 class="card-title">Edit Application Window</h3></div>
+                        <div class="card-body">
+                            <form action="/FMS/actions/update_window.php" method="post">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="window_id" value="<?= (int) $editingWindow['id'] ?>">
+                                <div class="form-group"><label>Name</label><input type="text" name="name" class="form-control" value="<?= e($editingWindow['name']) ?>" required></div>
+                                <div class="form-group"><label>Open Date &amp; Time</label><input type="datetime-local" name="open_date" class="form-control" value="<?= date('Y-m-d\TH:i', strtotime($editingWindow['open_date'])) ?>" required></div>
+                                <div class="form-group"><label>Close Date &amp; Time</label><input type="datetime-local" name="close_date" class="form-control" value="<?= date('Y-m-d\TH:i', strtotime($editingWindow['close_date'])) ?>" required></div>
+                                <div class="form-group"><label>Max Capacity</label><input type="number" name="max_capacity" class="form-control" min="1" value="<?= $editingWindow['max_capacity'] !== null ? (int) $editingWindow['max_capacity'] : '' ?>"></div>
+                                <div class="form-check mb-3"><input type="checkbox" name="is_active" class="form-check-input" id="windowActive" <?= $editingWindow['is_active'] ? 'checked' : '' ?>><label class="form-check-label" for="windowActive">Active</label></div>
+                                <button type="submit" class="btn btn-warning">Update Window</button>
+                                <a href="/FMS/admin/application_windows.php" class="btn btn-default ml-2">Cancel</a>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

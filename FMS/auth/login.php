@@ -27,15 +27,10 @@ include __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="login-split">
-    <!-- Left side: About the system -->
     <div class="login-intro col-md-6">
         <div class="login-intro-content">
             <div class="login-intro-brand" style="border-radius: auto;">
-                <img
-                    src="/FMS/assets/img/Screenshot%202026-09-08%20at%2009-25-17%20Design%20Editor.png"
-                    alt="LinkFlow logo"
-                    class="login-intro-logo login-intro-logo-image"
-                >
+                <img src="/FMS/assets/img/Screenshot%202026-09-08%20at%2009-25-17%20Design%20Editor.png" alt="LinkFlow logo" class="login-intro-logo login-intro-logo-image">
             </div>
             <h1 class="login-intro-title">Field Application Management System</h1>
             <p class="login-intro-lead">
@@ -64,14 +59,13 @@ include __DIR__ . '/../includes/header.php';
 
             <div class="login-intro-footer">
                 <p>Need an account?</p>
-                <a href="/FMS/auth/register.php" class="login-intro-link">Register as a student <i class="fas fa-arrow-right"></i></a>
+                <a href="/FMS/auth/register.php" class="login-intro-link"> Please register now </a> <i class="fas fa-arrow-right"></i></a>
             </div>
         </div>
 
         <div class="login-intro-shape"></div>
     </div>
 
-    <!-- Right side: Login form -->
     <div class="login-form-side col-md-6">
         <div class="login-box">
             <div class="card login-card">
@@ -94,13 +88,13 @@ include __DIR__ . '/../includes/header.php';
                         </div>
 
                         <div class="input-group mb-3">
-                            <input type="password" name="password" class="form-control" placeholder="Password" required>
-                            <div class="input-group-append">
-                                <div class="input-group-text">
-                                    <span class="fas fa-lock"></span>
-                                </div>
-                            </div>
-                        </div>
+    <input type="password" name="password" id="loginPassword" class="form-control" placeholder="Password" required>
+    <div class="input-group-append">
+        <button type="button" class="btn btn-outline-secondary toggle-password" data-target="#loginPassword" tabindex="-1" aria-label="Show password">
+            <i class="fas fa-eye"></i>
+        </button>
+    </div>
+</div>
 
                         <div class="row">
                             <div class="col-12">

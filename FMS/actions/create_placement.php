@@ -74,7 +74,7 @@ if (get_placement_by_application($pdo, $applicationId)) {
 if ($deptId === 0) {
     $errors[] = 'Please select a department.';
 } else {
-    $stmt = $pdo->prepare("SELECT id FROM departments WHERE id = ? AND is_active = 1");
+    $stmt = $pdo->prepare("SELECT id FROM departments WHERE id = ? AND is_active = 1 AND deleted = 0");
     $stmt->execute([$deptId]);
     if (!$stmt->fetch()) {
         $errors[] = 'The selected department does not exist or is inactive.';
@@ -86,12 +86,12 @@ $academicSupId = $academicSup !== '' ? (int) $academicSup : null;
 $industrialSupId = $industrialSup !== '' ? (int) $industrialSup : null;
 
 if ($academicSupId !== null) {
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE id = ? AND status = 'active' AND deleted_at IS NULL");
+    $stmt = $pdo->prepare("SELECT id FROM users WHERE id = ? AND status = 'active' AND deleted_at IS NULL AND deleted = 0");
     $stmt->execute([$academicSupId]);
     if (!$stmt->fetch()) $errors[] = 'The academic supervisor is not a valid active user.';
 }
 if ($industrialSupId !== null) {
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE id = ? AND status = 'active' AND deleted_at IS NULL");
+    $stmt = $pdo->prepare("SELECT id FROM users WHERE id = ? AND status = 'active' AND deleted_at IS NULL AND deleted = 0");
     $stmt->execute([$industrialSupId]);
     if (!$stmt->fetch()) $errors[] = 'The industrial supervisor is not a valid active user.';
 }

@@ -1,18 +1,9 @@
 <?php
-/**
- * Student Profile
- *
- * Allows the logged-in student to view and update their information
- * stored in the `students` table. Only fields the student is allowed
- * to change are editable (e.g. email, phone, name, gender, nationality,
- * DOB, study level, course). The registration number is shown but not
- * editable.
- */
+/** @var array $currentStudent */
 require_once __DIR__ . '/../includes/student_check.php';
 
 $pageTitle = 'My Profile';
 
-// Load lookup data for dropdowns
 $nationalities = get_nationalities($pdo);
 $studyLevels   = get_study_levels($pdo);
 

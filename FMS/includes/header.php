@@ -12,6 +12,7 @@ $pageTitle = $pageTitle ?? 'LinkFlow';
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="/FMS/assets/css/style.css">
     <script src="/FMS/assets/js/tinymce_8.9.1/tinymce/js/tinymce/tinymce.min.js"></script>
+    
     <script>
   document.addEventListener('DOMContentLoaded', function() {
     tinymce.init({
@@ -49,6 +50,20 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
 
+});
+document.addEventListener('click', function (e) {
+    // ...your existing click-handling code...
+
+    const toggleBtn = e.target.closest('.toggle-password');
+    if (toggleBtn) {
+        const input = document.querySelector(toggleBtn.dataset.target);
+        const icon  = toggleBtn.querySelector('i');
+        const showing = input.type === 'text';
+
+        input.type = showing ? 'password' : 'text';
+        icon.classList.toggle('fa-eye', showing);
+        icon.classList.toggle('fa-eye-slash', !showing);
+    }
 });
 </script>
 </head>

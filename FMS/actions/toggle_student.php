@@ -34,7 +34,7 @@ if ($studentId === 0) {
     redirect('/FMS/admin/students.php');
 }
 
-$student = get_student($pdo, $studentId);
+$student = get_student($pdo, $studentId, true);
 if (!$student) {
     set_flash('error', 'Student not found.');
     redirect('/FMS/admin/students.php');

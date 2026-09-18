@@ -1,14 +1,5 @@
 <?php
-/**
- * Save Supervisor Action
- *
- * Creates a new supervisor user in the `users` table and assigns them
- * a supervisor role via the `user_roles` table. The password is hashed
- * with password_hash().
- *
- * Supervisors are stored in the `users` table — there is no separate
- * supervisor table. They authenticate the same way as other staff.
- */
+
 require_once __DIR__ . '/../includes/functions.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -36,7 +27,8 @@ $errors = [];
 if ($username === '') $errors[] = 'Username is required.';
 if ($fullName === '') $errors[] = 'Full name is required.';
 if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'A valid email is required.';
-if (strlen($password) < 6) $errors[] = 'Password must be at least 6 characters.';
+if (strlen($password) < 8) $errors[] = 'Password must be at least 8 characters.';
+if ($phone !== '' && strlen($phone) < 9) $errors[] = 'Phone number must be at least 9 characters.';
 if ($roleId === 0) $errors[] = 'Please select a supervisor type.';
 
 // Check for duplicate username

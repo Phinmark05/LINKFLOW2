@@ -8,6 +8,7 @@ if (!empty($_SESSION['user_id'])) {
 }
 $nationalities = get_nationalities($pdo);
 $studyLevels   = get_study_levels($pdo);
+$institutions  = get_all_institutions($pdo);
 $pageTitle = 'Register';
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -118,6 +119,18 @@ include __DIR__ . '/../includes/header.php';
                         <label>Course of Study</label>
                         <input type="text" name="course_of_study" class="form-control">
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Institution</label>
+                    <select name="institution_id" class="form-control" required>
+                        <option value="">— Select Institution —</option>
+                        <?php foreach ($institutions as $institution): ?>
+                            <?php if ($institution['is_active']): ?>
+                                <option value="<?= (int) $institution['id'] ?>"><?= e($institution['name']) ?></option>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-block">Register</button>

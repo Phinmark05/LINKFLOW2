@@ -142,9 +142,7 @@ function log_application_action(PDO $pdo, int $applicationId, ?int $userId, stri
     ]);
 }
 
-/**
- * Create an audit log entry for a placement action.
- */
+
 function log_placement_action(
     PDO $pdo,
     int $placementId,
@@ -260,6 +258,7 @@ function get_active_application_windows(PDO $pdo): array
     $stmt = $pdo->query("
         SELECT * FROM application_windows
         WHERE is_active = 1
+          AND deleted = 0
           AND open_date <= NOW()
           AND close_date >= NOW()
         ORDER BY close_date ASC
@@ -270,30 +269,48 @@ function get_active_application_windows(PDO $pdo): array
 /**
  * Get all application windows (for admin management).
  */
-function get_all_application_windows(PDO $pdo): array
+function get_all_application_windows(PDO $pdo, bool $includeDeleted = true): array
 {
+    $deletedCondition = $includeDeleted ? '' : 'WHERE aw.deleted = 0';
     $stmt = $pdo->query("
         SELECT aw.*, u.full_name AS creator_name
         FROM application_windows aw
         LEFT JOIN users u ON aw.created_by = u.id
+        $deletedCondition
         ORDER BY aw.open_date DESC
     ");
     return $stmt->fetchAll();
 }
 
 
-function get_all_departments(PDO $pdo): array
+function get_all_departments(PDO $pdo, bool $includeDeleted = false): array
 {
-    $stmt = $pdo->query("SELECT * FROM departments ORDER BY name ASC");
+    $deletedCondition = $includeDeleted ? '' : 'WHERE deleted = 0';
+    $stmt = $pdo->query("SELECT * FROM departments $deletedCondition ORDER BY name ASC");
     return $stmt->fetchAll();
 }
 
 
-function get_specializations(PDO $pdo, bool $activeOnly = true): array
+function get_all_institutions(PDO $pdo, bool $includeDeleted = false): array
+{
+    $deletedCondition = $includeDeleted ? '' : 'WHERE deleted = 0';
+    $stmt = $pdo->query("SELECT * FROM institutions $deletedCondition ORDER BY name ASC");
+    return $stmt->fetchAll();
+}
+
+
+function get_specializations(PDO $pdo, bool $activeOnly = true, bool $includeDeleted = false): array
 {
     $sql = "SELECT * FROM specializations";
+    $conditions = [];
     if ($activeOnly) {
-        $sql .= " WHERE is_active = 1";
+        $conditions[] = 'is_active = 1';
+    }
+    if (!$includeDeleted) {
+        $conditions[] = 'deleted = 0';
+    }
+    if ($conditions) {
+        $sql .= ' WHERE ' . implode(' AND ', $conditions);
     }
     $sql .= " ORDER BY name ASC";
     $stmt = $pdo->query($sql);
@@ -306,7 +323,7 @@ function get_application_specializations(PDO $pdo, int $applicationId): array
     $stmt = $pdo->prepare("
         SELECT s.* FROM application_specializations aps
         JOIN specializations s ON aps.specialization_id = s.id
-        WHERE aps.application_id = ?
+        WHERE aps.application_id = ? AND s.deleted = 0
     ");
     $stmt->execute([$applicationId]);
     return $stmt->fetchAll();
@@ -345,22 +362,25 @@ function get_supervisors(PDO $pdo): array
         SELECT u.* FROM users u
         JOIN user_roles ur ON u.id = ur.user_id
         JOIN roles r ON ur.role_id = r.id
-        WHERE r.name IN ('academic_supervisor', 'industrial_supervisor', 'supervisor')
+                WHERE r.name IN ('academic_supervisor', 'industrial_supervisor', 'supervisor')
           AND u.status = 'active'
+                    AND u.deleted = 0
         ORDER BY u.full_name ASC
     ");
     return $stmt->fetchAll();
 }
 
 
-function get_all_users(PDO $pdo): array
+function get_all_users(PDO $pdo, bool $includeDeleted = false): array
 {
+    $deletedCondition = $includeDeleted ? '' : 'AND u.deleted = 0';
     $stmt = $pdo->query("
         SELECT u.*, GROUP_CONCAT(r.name SEPARATOR ', ') AS role_names
         FROM users u
         LEFT JOIN user_roles ur ON u.id = ur.user_id
         LEFT JOIN roles r ON ur.role_id = r.id
         WHERE u.deleted_at IS NULL
+        $deletedCondition
         GROUP BY u.id
         ORDER BY u.full_name ASC
     ");
@@ -368,25 +388,28 @@ function get_all_users(PDO $pdo): array
 }
 
 
-function get_all_students(PDO $pdo): array
+function get_all_students(PDO $pdo, bool $includeDeleted = true): array
 {
-    $stmt = $pdo->query("SELECT * FROM students ORDER BY full_name ASC");
+    $deletedCondition = $includeDeleted ? '' : 'WHERE s.deleted = 0';
+    $stmt = $pdo->query("SELECT s.*, i.name AS institution_name FROM students s LEFT JOIN institutions i ON i.id = s.institution_id $deletedCondition ORDER BY s.full_name ASC");
     return $stmt->fetchAll();
 }
 
 
-function get_student(PDO $pdo, int $studentId): ?array
+function get_student(PDO $pdo, int $studentId, bool $includeDeleted = false): ?array
 {
-    $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
+    $deletedCondition = $includeDeleted ? '' : 'AND deleted = 0';
+    $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ? $deletedCondition");
     $stmt->execute([$studentId]);
     $result = $stmt->fetch();
     return $result ?: null;
 }
 
 
-function get_user(PDO $pdo, int $userId): ?array
+function get_user(PDO $pdo, int $userId, bool $includeDeleted = false): ?array
 {
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+    $deletedCondition = $includeDeleted ? '' : 'AND deleted = 0';
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? $deletedCondition");
     $stmt->execute([$userId]);
     $result = $stmt->fetch();
     return $result ?: null;
@@ -563,7 +586,7 @@ function get_user_role_ids(PDO $pdo, int $userId): array
 
 function count_students(PDO $pdo): int
 {
-    return (int) $pdo->query("SELECT COUNT(*) FROM students")->fetchColumn();
+    return (int) $pdo->query("SELECT COUNT(*) FROM students WHERE deleted = 0")->fetchColumn();
 }
 
 
@@ -582,7 +605,7 @@ function count_active_windows(PDO $pdo): int
 {
     return (int) $pdo->query("
         SELECT COUNT(*) FROM application_windows
-        WHERE is_active = 1 AND open_date <= NOW() AND close_date >= NOW()
+        WHERE is_active = 1 AND deleted = 0 AND open_date <= NOW() AND close_date >= NOW()
     ")->fetchColumn();
 }
 

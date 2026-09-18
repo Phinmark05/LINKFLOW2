@@ -2,12 +2,12 @@
 require_once __DIR__ . '/../includes/functions.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    redirect('/FMS/auth/register.php');
+    redirect('/FMS/admin/students.php');
 }
 
 if (!verify_csrf()) {
     set_flash('error', 'Invalid form submission. Please try again.');
-    redirect('/FMS/auth/register.php');
+    redirect('/FMS/admin/students.php');
 }
 
 // --- Collect and trim all submitted values ---
@@ -86,5 +86,5 @@ $stmt->execute([
 ]);
 
 // Registration successful — redirect to login
-set_flash('success', 'Registration successful. You can now log in.');
-redirect('/FMS/auth/login.php');
+set_flash('success', 'The student was added successfully.');
+redirect('/FMS/admin/students.php');

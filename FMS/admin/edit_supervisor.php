@@ -7,7 +7,7 @@ if (!current_user_is_admin()) {
 }
 
 $userId = (int) ($_GET['id'] ?? 0);
-$user = $userId > 0 ? get_user($pdo, $userId) : null;
+$user = $userId > 0 ? get_user($pdo, $userId, true) : null;
 if (!$user) {
     set_flash('error', 'Staff account not found.');
     redirect('/FMS/admin/supervisors.php');
@@ -24,26 +24,94 @@ include __DIR__ . '/../includes/navbar.php';
 include __DIR__ . '/../includes/sidebar.php';
 ?>
 <div class="content-wrapper">
-    <div class="content-header"><div class="container-fluid"><h1 class="m-0">Edit Staff Account</h1></div></div>
-    <div class="content"><div class="container-fluid"><div class="row"><div class="col-md-8">
-        <div class="card card-primary">
-            <div class="card-header"><h3 class="card-title">Update <?= e($user['full_name']) ?></h3></div>
-            <div class="card-body">
-                <form action="/FMS/actions/update_supervisor.php" method="post">
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="user_id" value="<?= $userId ?>">
-                    <div class="form-group"><label>Username</label><input type="text" class="form-control" value="<?= e($user['username']) ?>" readonly></div>
-                    <div class="form-group"><label>Full Name</label><input type="text" name="full_name" class="form-control" value="<?= e($user['full_name']) ?>" required></div>
-                    <div class="form-group"><label>Email</label><input type="email" name="email" class="form-control" value="<?= e($user['email']) ?>" required></div>
-                    <div class="form-group"><label>Phone</label><input type="text" name="phone_number" class="form-control" value="<?= e($user['phone_number'] ?? '') ?>"></div>
-                    <div class="form-group"><label>Designation</label><input type="text" name="designation" class="form-control" value="<?= e($user['designation'] ?? '') ?>"></div>
-                    <div class="form-group"><label>Role</label><select name="role_id" class="form-control" required><?php foreach ($roles as $role): ?><?php if (in_array($role['name'], $assignableRoles, true)): ?><option value="<?= (int) $role['id'] ?>" <?= (int) $selectedRoleId === (int) $role['id'] ? 'selected' : '' ?>><?= e(ucwords(str_replace('_', ' ', $role['name']))) ?></option><?php endif; ?><?php endforeach; ?></select></div>
-                    <div class="form-group"><label>Status</label><select name="status" class="form-control" required><?php foreach (['active', 'suspended'] as $status): ?><option value="<?= $status ?>" <?= $user['status'] === $status ? 'selected' : '' ?>><?= e(ucfirst($status)) ?></option><?php endforeach; ?></select></div>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                    <a href="/FMS/admin/supervisors.php" class="btn btn-default">Cancel</a>
-                </form>
+    <div class="content-header">
+        <div class="container-fluid">
+            <h1 class="m-0">Edit Staff Account</h1>
+        </div>
+    </div>
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">Update <?= e($user['full_name']) ?></h3>
+                        </div>
+                        <div class="card-body">
+                            <form action="/FMS/actions/update_supervisor.php" method="post">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="user_id" value="<?= $userId ?>">
+                                <div class="form-group">
+                                    <label>Username</label>
+                                    <input type="text" class="form-control" value="<?= e($user['username']) ?>" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label>Full Name</label>
+                                    <input type="text" name="full_name" class="form-control" value="<?= e($user['full_name']) ?>" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" name="email" class="form-control" value="<?= e($user['email']) ?>" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Phone</label>
+                                    <input type="text" name="phone_number" class="form-control" minlength="9" value="<?= e($user['phone_number'] ?? '') ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label>Designation</label>
+                                    <input type="text" name="designation" class="form-control" value="<?= e($user['designation'] ?? '') ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label>Role</label>
+                                    <select name="role_id" class="form-control" required>
+                                        <?php foreach ($roles as $role): ?>
+                                            <?php if (in_array($role['name'], $assignableRoles, true)): ?>
+                                                <option value="<?= (int) $role['id'] ?>" <?= (int) $selectedRoleId === (int) $role['id'] ? 'selected' : '' ?>>
+                                                    <?= e(ucwords(str_replace('_', ' ', $role['name']))) ?>
+                                                </option>
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="form-group"><label>Status</label><select name="status" class="form-control" required><?php foreach (['active', 'suspended'] as $status): ?><option value="<?= $status ?>" <?= $user['status'] === $status ? 'selected' : '' ?>><?= e(ucfirst($status)) ?></option><?php endforeach; ?></select></div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                <a href="/FMS/admin/supervisors.php" class="btn btn-default">Cancel</a>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card card-info">
+                        <div class="card-header"><h3 class="card-title">Account Info</h3></div>
+                        <div class="card-body">
+                            <p><strong>Username:</strong> <?= e($user['username']) ?></p>
+                            <p><strong>Designation:</strong> <?= e($user['designation'] ?? '—') ?></p>
+                            <p><strong>Status:</strong> <span class="badge bg-success"><?= e(ucfirst($user['status'])) ?></span></p>
+                            
+                        </div>
+                    </div>
+                    <div class="card card-primary">
+                        <div class="card-header"><h3 class="card-title">Change Password</h3></div>
+                        <div class="card-body">
+                            <form action="/FMS/actions/update_supervisor.php" method="post">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="user_id" value="<?= $userId ?>">
+                                <input type="hidden" name="action" value="password">
+                                <div class="form-group">
+                                    <label>New Password</label>
+                                    <input type="password" name="new_password" class="form-control" minlength="6">
+                                </div>
+                                <div class="form-group">
+                                    <label>Confirm New Password</label>
+                                    <input type="password" name="new_password_confirm" class="form-control" minlength="6">
+                                </div>
+                                <button type="submit" class="btn btn-warning">Change Password</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div></div></div></div>
+    </div>
 </div>
 <?php include __DIR__ . '/../includes/footer.php'; ?>
